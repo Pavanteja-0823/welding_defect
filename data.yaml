@@ -1,0 +1,9 @@
+path: C:/Users/Admin/OneDrive/Desktop/welding_defect/dataset
+
+train: train/images
+val: valid/images
+
+names:
+  0: crack
+  1: porosity
+  2: undercut

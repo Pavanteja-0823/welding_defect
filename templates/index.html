@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weld Inspector — AI Defect Detection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f2e;
+            --bg-card-hover: #1f2638;
+            --border-color: #2a3040;
+            --border-light: #374151;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-blue-glow: rgba(59,130,246,0.15);
+            --accent-green: #22c55e;
+            --accent-green-glow: rgba(34,197,94,0.15);
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239,68,68,0.15);
+            --accent-amber: #f59e0b;
+            --accent-amber-glow: rgba(245,158,11,0.15);
+            --gradient-primary: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        html { font-size: 16px; scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+        /* ── Header ── */
+        header {
+            background: rgba(17,24,39,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { display: flex; align-items: center; gap: 0.65rem; font-size: 1.15rem; font-weight: 700; }
+        .logo-icon {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--gradient-primary); border-radius: var(--radius-sm); font-size: 1rem;
+        }
+        .logo span { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .header-badge {
+            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.75rem; color: var(--text-secondary);
+            background: var(--bg-card); padding: 0.3rem 0.8rem; border-radius: 100px; border: 1px solid var(--border-color);
+        }
+        .header-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-amber); }
+        .header-badge .dot.ready { background: var(--accent-green); }
+        .header-badge .dot.error { background: var(--accent-red); }
+        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .header-badge .dot.pulse { animation: pulse-dot 1.5s infinite; }
+
+        /* ── Main ── */
+        main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+
+        /* ── Steps Indicator ── */
+        .steps {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0; margin-bottom: 2rem;
+        }
+        .step {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.82rem; font-weight: 500; color: var(--text-muted);
+            padding: 0.4rem 1rem; border-radius: 100px;
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .step.active { color: var(--accent-blue); border-color: var(--accent-blue); background: var(--accent-blue-glow); }
+        .step.done { color: var(--accent-green); border-color: var(--accent-green); background: var(--accent-green-glow); }
+        .step .num {
+            width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-size: 0.7rem; font-weight: 700;
+            background: var(--border-color); color: var(--text-muted);
+        }
+        .step.active .num { background: var(--accent-blue); color: #fff; }
+        .step.done .num { background: var(--accent-green); color: #fff; }
+        .step-connector {
+            width: 32px; height: 2px; background: var(--border-color); margin: 0 4px;
+            transition: var(--transition);
+        }
+        .step-connector.done { background: var(--accent-green); }
+
+        /* ── Upload Zone ── */
+        .upload-zone {
+            background: var(--bg-card);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-zone::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(600px circle at var(--mx,50%) var(--my,50%), var(--accent-blue-glow), transparent 60%);
+            opacity: 0; transition: opacity 0.4s; pointer-events: none;
+        }
+        .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent-blue); background: var(--bg-card-hover); }
+        .upload-zone:hover::before, .upload-zone.dragover::before { opacity: 1; }
+        .upload-zone.has-image { border-style: solid; border-color: var(--border-light); padding: 1.25rem; }
+        .upload-icon {
+            width: 56px; height: 56px; margin: 0 auto 0.75rem;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--accent-blue-glow); border-radius: 50%; font-size: 1.5rem; transition: var(--transition);
+        }
+        .upload-zone:hover .upload-icon { transform: scale(1.1); background: rgba(59,130,246,0.25); }
+        .upload-zone h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .upload-zone p { font-size: 0.85rem; color: var(--text-muted); }
+        .upload-zone input[type="file"] { display: none; }
+        .upload-hint {
+            margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-muted);
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+        }
+        .upload-hint kbd {
+            background: var(--bg-secondary); padding: 0.1rem 0.4rem; border-radius: 4px;
+            font-size: 0.65rem; font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border-color);
+        }
+        .upload-file-name {
+            font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.5rem;
+        }
+
+        /* ── Preview Row ── */
+        .preview-row { display: none; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1rem; }
+        .upload-zone.has-image .preview-row { display: grid; }
+        .upload-zone.has-image .upload-placeholder { display: none; }
+        .preview-card {
+            background: var(--bg-secondary); border-radius: var(--radius-md); overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .preview-card .card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.5rem 0.85rem; background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid var(--border-color); font-size: 0.78rem; font-weight: 500; color: var(--text-secondary);
+        }
+        .preview-card .card-header .badge {
+            font-size: 0.65rem; padding: 0.1rem 0.5rem; border-radius: 100px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+        }
+        .preview-card .card-image {
+            width: 100%; aspect-ratio: 4/3; object-fit: contain; display: block; background: #000;
+        }
+        .compare-toggle {
+            display: flex; gap: 0.2rem; background: var(--bg-card);
+            padding: 0.15rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);
+        }
+        .compare-toggle button {
+            background: none; border: none; color: var(--text-muted); padding: 0.2rem 0.5rem;
+            border-radius: 6px; font-size: 0.68rem; cursor: pointer; transition: var(--transition); font-family: inherit;
+        }
+        .compare-toggle button.active { background: var(--accent-blue); color: #fff; }
+        .compare-toggle button:hover:not(.active) { color: var(--text-secondary); }
+
+        /* ── Analyze Button ── */
+        .analyze-btn {
+            display: none; margin: 1.25rem auto 0; padding: 0.75rem 2.5rem;
+            border: none; border-radius: var(--radius-md);
+            background: var(--gradient-primary); color: #fff;
+            font-size: 1rem; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: var(--transition); position: relative; overflow: hidden;
+        }
+        .analyze-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.1) 100%);
+        }
+        .analyze-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-blue-glow); }
+        .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .analyze-btn.show { display: block; }
+        .analyze-btn .loading-text { display: none; }
+        .analyze-btn .spinner {
+            display: none; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+            border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto;
+        }
+        .analyze-btn.loading .spinner { display: inline-block; vertical-align: middle; margin-right: 0.5rem; }
+        .analyze-btn.loading .btn-text { display: none; }
+        .analyze-btn.loading .loading-text { display: inline; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Loading Bar ── */
+        .loading-bar-container {
+            display: none; margin-top: 1.5rem;
+        }
+        .loading-bar-container.show { display: block; }
+        .loading-bar-track {
+            width: 100%; height: 6px; background: var(--bg-secondary);
+            border-radius: 3px; overflow: hidden;
+        }
+        .loading-bar-fill {
+            height: 100%; background: var(--gradient-primary); border-radius: 3px;
+            width: 0%; transition: width 0.5s ease;
+        }
+        .loading-bar-fill.done { background: linear-gradient(135deg, #22c55e, #16a34a); width: 100% !important; }
+        .loading-status {
+            display: flex; align-items: center; gap: 0.5rem;
+            margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);
+        }
+        .loading-status .ldot {
+            width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+        }
+        .loading-status .ldot.loading { background: var(--accent-blue); animation: pulse-dot 1.5s infinite; }
+        .loading-status .ldot.done { background: var(--accent-green); }
+        .loading-status .ldot.error { background: var(--accent-red); }
+
+        /* ── Results ── */
+        .results-section {
+            display: none; margin-top: 1.5rem; animation: slideUp 0.5s ease;
+        }
+        .results-section.show { display: block; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-meta {
+            display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;
+            font-size: 0.78rem; color: var(--text-muted);
+        }
+        .result-meta span { display: flex; align-items: center; gap: 0.35rem; }
+
+        .classification-banner {
+            display: flex; align-items: center; gap: 0.85rem;
+            padding: 1rem 1.25rem; border-radius: var(--radius-lg);
+            margin-bottom: 1.25rem; border: 1px solid;
+        }
+        .classification-banner.good { background: var(--accent-green-glow); border-color: rgba(34,197,94,0.3); }
+        .classification-banner.bad { background: var(--accent-red-glow); border-color: rgba(239,68,68,0.3); }
+        .classification-banner .si {
+            width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-size: 1.2rem; flex-shrink: 0;
+        }
+        .classification-banner.good .si { background: var(--accent-green); }
+        .classification-banner.bad .si { background: var(--accent-red); }
+        .classification-banner .sinfo h2 { font-size: 1.05rem; font-weight: 700; }
+        .classification-banner .sinfo p { font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.1rem; }
+        .classification-banner .stag {
+            margin-left: auto; padding: 0.25rem 0.85rem; border-radius: 100px;
+            font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+        }
+        .stag.high { background: var(--accent-red-glow); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.3); }
+        .stag.medium { background: var(--accent-amber-glow); color: var(--accent-amber); border: 1px solid rgba(245,158,11,0.3); }
+        .stag.low { background: rgba(59,130,246,0.15); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.3); }
+        .stag.none { background: var(--accent-green-glow); color: var(--accent-green); border: 1px solid rgba(34,197,94,0.3); }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.85rem; margin-bottom: 1.25rem;
+        }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 1rem; text-align: center; transition: var(--transition);
+        }
+        .stat-card:hover { border-color: var(--border-light); }
+        .stat-card .sv { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+        .stat-card .sl { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .stat-card .sic { font-size: 1.3rem; margin-bottom: 0.35rem; }
+
+        .defect-details { margin-bottom: 1.25rem; }
+        .defect-details h3 { font-size: 0.92rem; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+        .defect-list { display: flex; flex-direction: column; gap: 0.6rem; }
+        .defect-item {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 0.85rem 1rem;
+            display: flex; align-items: center; gap: 0.85rem; transition: var(--transition);
+        }
+        .defect-item:hover { border-color: var(--border-light); }
+        .defect-item .di {
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border-radius: var(--radius-sm); font-size: 0.85rem; flex-shrink: 0;
+        }
+        .defect-item .di.crack { background: rgba(239,68,68,0.15); }
+        .defect-item .di.porosity { background: rgba(245,158,11,0.15); }
+        .defect-item .di.undercut { background: rgba(59,130,246,0.15); }
+        .defect-item .dinfo { flex: 1; min-width: 0; }
+        .defect-item .dname { font-weight: 600; font-size: 0.85rem; }
+        .defect-item .ddesc { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.05rem; }
+        .defect-item .dconf {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 500;
+            padding: 0.15rem 0.6rem; border-radius: 6px; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); flex-shrink: 0;
+        }
+
+        /* ── Confidence Slider ── */
+        .confidence-slider {
+            display: none; margin: 1.25rem auto 0; max-width: 420px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 0.85rem 1.1rem;
+            transition: var(--transition);
+        }
+        .confidence-slider.show { display: block; }
+        .confidence-slider .slider-header {
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 0.8rem; font-weight: 500; margin-bottom: 0.5rem;
+        }
+        .confidence-slider .slider-value {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+            color: var(--accent-blue); font-weight: 600;
+            background: var(--accent-blue-glow); padding: 0.05rem 0.6rem;
+            border-radius: 6px; border: 1px solid rgba(59,130,246,0.2);
+        }
+        .confidence-slider .slider-labels {
+            display: flex; justify-content: space-between;
+            font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem;
+        }
+        .confidence-slider .filter-count {
+            font-size: 0.7rem; color: var(--text-muted); text-align: center;
+            margin-top: 0.5rem; padding-top: 0.4rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .confidence-slider .filter-count strong { color: var(--text-secondary); }
+
+        /* Range input styling */
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 5px;
+            background: var(--bg-secondary); border-radius: 3px;
+            outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: var(--gradient-primary);
+            border: 2px solid var(--bg-card);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+            cursor: pointer; transition: var(--transition);
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 16px rgba(59,130,246,0.5);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: var(--gradient-primary);
+            border: 2px solid var(--bg-card);
+            cursor: pointer;
+        }
+
+        .recommendations {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 1rem 1.25rem;
+        }
+        .recommendations h3 { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem; }
+        .recommendations p { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+        .recommendations ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+        .recommendations ul li { padding-left: 1.25rem; position: relative; font-size: 0.82rem; color: var(--text-secondary); }
+        .recommendations ul li::before { content: '→'; position: absolute; left: 0; color: var(--accent-blue); }
+
+        /* ── Action Buttons ── */
+        .action-row {
+            display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;
+        }
+        .action-row button {
+            padding: 0.65rem 1.5rem; border-radius: var(--radius-md);
+            font-size: 0.85rem; font-weight: 500; font-family: inherit;
+            cursor: pointer; transition: var(--transition);
+            border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary);
+        }
+        .action-row button:hover { background: var(--bg-card-hover); border-color: var(--border-light); color: var(--text-primary); }
+        .action-row button.primary { background: var(--gradient-primary); color: #fff; border: none; }
+        .action-row button.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-blue-glow); }
+        .action-row button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* ── History ── */
+        .history-section {
+            margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;
+        }
+        .history-section h3 {
+            font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .history-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto; }
+        .history-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.6rem 0.85rem; background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+            font-size: 0.78rem; cursor: pointer; transition: var(--transition);
+        }
+        .history-item:hover { border-color: var(--border-light); }
+        .history-item .h-status { font-weight: 600; }
+        .history-item .h-status.good { color: var(--accent-green); }
+        .history-item .h-status.bad { color: var(--accent-red); }
+        .history-item .h-time { color: var(--text-muted); margin-left: auto; }
+        .history-empty {
+            text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 1rem;
+        }
+
+        /* ── Footer ── */
+        footer { text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.72rem; border-top: 1px solid var(--border-color); }
+
+        /* ── Confetti ── */
+        .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; overflow: hidden; }
+        .confetti-piece { position: absolute; width: 8px; height: 8px; top: -10px; animation: confetti-fall linear forwards; }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; bottom: 2rem; right: 2rem;
+            background: #1a1f2e; border: 1px solid rgba(239,68,68,0.3);
+            border-radius: var(--radius-md); padding: 0.85rem 1.1rem;
+            color: var(--text-primary); font-size: 0.82rem;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+            transform: translateY(100px); opacity: 0;
+            transition: var(--transition); z-index: 2000; max-width: 380px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast .toast-title { font-weight: 600; margin-bottom: 0.2rem; }
+        .toast .toast-msg { color: var(--text-muted); font-size: 0.78rem; }
+
+        @media (max-width: 768px) {
+            .steps { font-size: 0.7rem; }
+            .step { padding: 0.3rem 0.6rem; }
+            .step-connector { width: 16px; }
+            .preview-row { grid-template-columns: 1fr; }
+            .classification-banner { flex-wrap: wrap; }
+            .classification-banner .stag { margin-left: 0; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .result-meta { flex-wrap: wrap; }
+            header { padding: 0.5rem 1rem; }
+            main { padding: 1rem 0.75rem 2rem; }
+        }
+        @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } .defect-item { flex-wrap: wrap; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo"><div class="logo-icon">🔬</div><span>Weld Inspector</span></div>
+    <div class="header-badge" id="modelBadge">
+        <span class="dot pulse" id="modelDot"></span>
+        <span id="modelStatusText">Loading AI...</span>
+    </div>
+</header>
+
+<main>
+    <!-- Steps -->
+    <div class="steps">
+        <div class="step active" id="step1"><span class="num">1</span> Upload</div>
+        <div class="step-connector" id="conn1"></div>
+        <div class="step" id="step2"><span class="num">2</span> Analyze</div>
+        <div class="step-connector" id="conn2"></div>
+        <div class="step" id="step3"><span class="num">3</span> Results</div>
+    </div>
+
+    <!-- Upload Zone -->
+    <div class="upload-zone" id="uploadZone">
+        <div class="upload-placeholder">
+            <div class="upload-icon">📤</div>
+            <h3>Drop your weld image here</h3>
+            <p>or click to browse &nbsp;·&nbsp; JPG, PNG</p>
+            <div class="upload-hint"><kbd>Ctrl+V</kbd> to paste from clipboard</div>
+        </div>
+        <div class="upload-file-name" id="fileName"></div>
+        <div class="preview-row" id="previewRow">
+            <div class="preview-card">
+                <div class="card-header"><span>📷 Original</span><span class="badge">Uploaded</span></div>
+                <img id="originalPreview" class="card-image" alt="Original" />
+            </div>
+            <div class="preview-card">
+                <div class="card-header">
+                    <span>🎯 Detection</span>
+                    <div class="compare-toggle">
+                        <button class="active" data-view="annotated">Annotated</button>
+                        <button data-view="original">Original</button>
+                    </div>
+                </div>
+                <img id="annotatedPreview" class="card-image" alt="Annotated" />
+            </div>
+        </div>
+        <!-- Confidence Threshold Slider -->
+        <div class="confidence-slider" id="confidenceSlider">
+            <div class="slider-header">
+                <span>🎯 Confidence Threshold</span>
+                <span class="slider-value" id="confValue">0.25</span>
+            </div>
+            <input type="range" id="confThreshold" min="0" max="1" step="0.05" value="0.25" />
+            <div class="slider-labels">
+                <span>Show all</span>
+                <span>High confidence only</span>
+            </div>
+            <div class="filter-count" id="filterCount" style="display:none">
+                Showing <strong id="shownCount">0</strong> of <strong id="totalCount">0</strong> detections
+            </div>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg" />
+        <button class="analyze-btn" id="analyzeBtn">
+            <span class="btn-text">🔍 Analyze Weld</span>
+            <span class="loading-text">⏳ Analyzing...</span>
+            <span class="spinner"></span>
+        </button>
+    </div>
+
+    <!-- Loading Bar -->
+    <div class="loading-bar-container" id="loadingBar">
+        <div class="loading-bar-track"><div class="loading-bar-fill" id="loadingFill"></div></div>
+        <div class="loading-status" id="loadingStatus">
+            <span class="ldot loading" id="loadingDot"></span>
+            <span id="loadingText">Starting analysis...</span>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="resultsSection">
+        <div class="result-meta" id="resultMeta"></div>
+
+        <div class="classification-banner" id="classificationBanner">
+            <div class="si" id="statusIcon">✅</div>
+            <div class="sinfo"><h2 id="statusTitle">Good Weld</h2><p id="statusDesc">No defects detected.</p></div>
+            <div class="stag" id="severityTag">None</div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="defect-details" id="defectDetails">
+            <h3>🔍 Detected Defects</h3>
+            <div class="defect-list" id="defectList"></div>
+        </div>
+
+        <div class="recommendations" id="recommendations">
+            <h3>💡 Recommendations</h3>
+            <div id="recContent"></div>
+        </div>
+
+        <div class="action-row">
+            <button class="primary" id="newAnalysisBtn">🔬 Analyze Another Image</button>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-section" id="historySection" style="display:none">
+        <h3>📋 Analysis History</h3>
+        <div class="history-list" id="historyList"></div>
+    </div>
+</main>
+
+<footer>Powered by YOLOv8 &nbsp;·&nbsp; Welding Defect Detection System</footer>
+
+<div class="toast" id="toast"><div class="toast-title">⚠️ Error</div><div class="toast-msg" id="toastMsg">Something went wrong.</div></div>
+
+<script>
+// ─── Elements ───
+const els = {
+    modelDot: document.getElementById('modelDot'),
+    modelStatusText: document.getElementById('modelStatusText'),
+    uploadZone: document.getElementById('uploadZone'),
+    fileInput: document.getElementById('fileInput'),
+    originalPreview: document.getElementById('originalPreview'),
+    annotatedPreview: document.getElementById('annotatedPreview'),
+    fileName: document.getElementById('fileName'),
+    analyzeBtn: document.getElementById('analyzeBtn'),
+    loadingBar: document.getElementById('loadingBar'),
+    loadingFill: document.getElementById('loadingFill'),
+    loadingDot: document.getElementById('loadingDot'),
+    loadingText: document.getElementById('loadingText'),
+    resultsSection: document.getElementById('resultsSection'),
+    resultMeta: document.getElementById('resultMeta'),
+    classificationBanner: document.getElementById('classificationBanner'),
+    statusIcon: document.getElementById('statusIcon'),
+    statusTitle: document.getElementById('statusTitle'),
+    statusDesc: document.getElementById('statusDesc'),
+    severityTag: document.getElementById('severityTag'),
+    statsGrid: document.getElementById('statsGrid'),
+    defectDetails: document.getElementById('defectDetails'),
+    defectList: document.getElementById('defectList'),
+    recContent: document.getElementById('recContent'),
+    newAnalysisBtn: document.getElementById('newAnalysisBtn'),
+    historySection: document.getElementById('historySection'),
+    historyList: document.getElementById('historyList'),
+    toast: document.getElementById('toast'),
+    toastMsg: document.getElementById('toastMsg'),
+    step1: document.getElementById('step1'),
+    step2: document.getElementById('step2'),
+    step3: document.getElementById('step3'),
+    conn1: document.getElementById('conn1'),
+    conn2: document.getElementById('conn2'),
+    confidenceSlider: document.getElementById('confidenceSlider'),
+    confThreshold: document.getElementById('confThreshold'),
+    confValue: document.getElementById('confValue'),
+    filterCount: document.getElementById('filterCount'),
+    shownCount: document.getElementById('shownCount'),
+    totalCount: document.getElementById('totalCount'),
+};
+
+let currentFile = null;
+let currentAnnotatedB64 = null;
+let analysisHistory = [];
+let modelReady = false;
+let currentRawData = null;
+let confDebounceTimer = null;
+let resultsActive = false;
+
+// ─── Poll Model Status ───
+async function pollModelStatus() {
+    try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        if (data.model_ready) {
+            modelReady = true;
+            els.modelDot.className = 'dot ready';
+            els.modelStatusText.textContent = 'AI Ready';
+        } else if (data.model_error) {
+            els.modelDot.className = 'dot error';
+            els.modelStatusText.textContent = 'AI Error';
+        } else {
+            els.modelDot.className = 'dot pulse';
+            els.modelStatusText.textContent = 'Loading AI...';
+            setTimeout(pollModelStatus, 2000);
+        }
+    } catch {
+        setTimeout(pollModelStatus, 3000);
+    }
+}
+pollModelStatus();
+
+// ─── Steps helper ───
+function setStep(step) {
+    [els.step1, els.step2, els.step3].forEach((s, i) => {
+        s.classList.toggle('active', i + 1 === step);
+        s.classList.toggle('done', i + 1 < step);
+    });
+    [els.conn1, els.conn2].forEach((c, i) => {
+        c.classList.toggle('done', i + 1 < step);
+    });
+}
+
+// ─── File Handling ───
+function handleFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('Please select an image file.'); return; }
+    if (file.size > 20 * 1024 * 1024) { showToast('Image too large. Maximum 20MB.'); return; }
+    currentFile = file;
+    currentRawData = null;
+    els.fileName.textContent = '📄 ' + file.name;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        els.originalPreview.src = e.target.result;
+        els.annotatedPreview.src = e.target.result;
+        els.uploadZone.classList.add('has-image');
+        els.analyzeBtn.classList.add('show');
+        els.confidenceSlider.classList.add('show');
+        els.resultsSection.classList.remove('show');
+        els.loadingBar.classList.remove('show');
+        setStep(1);
+        resetFilterCount();
+    };
+    reader.readAsDataURL(file);
+}
+
+els.uploadZone.addEventListener('click', () => {
+    // Don't open file picker when results are being shown
+    if (resultsActive) return;
+    els.fileInput.click();
+});
+els.fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+els.uploadZone.addEventListener('dragover', (e) => {
+    if (resultsActive) return;
+    e.preventDefault(); els.uploadZone.classList.add('dragover');
+});
+els.uploadZone.addEventListener('dragleave', () => els.uploadZone.classList.remove('dragover'));
+els.uploadZone.addEventListener('drop', (e) => {
+    if (resultsActive) return;
+    e.preventDefault(); els.uploadZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]);
+});
+document.addEventListener('paste', (e) => {
+    if (resultsActive) return;
+    for (const item of e.clipboardData.items) {
+        if (item.type.startsWith('image/')) { handleFile(item.getAsFile()); break; }
+    }
+});
+
+els.uploadZone.addEventListener('mousemove', (e) => {
+    const r = els.uploadZone.getBoundingClientRect();
+    els.uploadZone.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+    els.uploadZone.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+});
+
+// ─── Compare Toggle ───
+document.querySelectorAll('.compare-toggle button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.compare-toggle button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        els.annotatedPreview.src = btn.dataset.view === 'annotated' && currentAnnotatedB64
+            ? 'data:image/jpeg;base64,' + currentAnnotatedB64
+            : els.originalPreview.src;
+    });
+});
+
+// ─── Analyze ───
+els.analyzeBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!currentFile || els.analyzeBtn.classList.contains('loading')) return;
+
+    // Step 2: Analyzing
+    setStep(2);
+    els.analyzeBtn.classList.add('loading');
+    els.analyzeBtn.disabled = true;
+    els.loadingBar.classList.add('show');
+    els.resultsSection.classList.remove('show');
+
+    // Simulate progress
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress = Math.min(progress + 5, 85);
+        els.loadingFill.style.width = progress + '%';
+    }, 200);
+
+    // Update status messages
+    const statusMessages = [
+        { at: 5, msg: '📤 Loading image...' },
+        { at: 15, msg: '🧠 Running AI model...' },
+        { at: 40, msg: '🔍 Detecting defects...' },
+        { at: 65, msg: '📊 Analyzing results...' },
+        { at: 80, msg: '✏️ Rendering annotations...' },
+    ];
+    let msgIndex = 0;
+    const msgInterval = setInterval(() => {
+        if (msgIndex < statusMessages.length && progress >= statusMessages[msgIndex].at) {
+            els.loadingText.textContent = statusMessages[msgIndex].msg;
+            msgIndex++;
+        }
+    }, 100);
+
+    const threshold = parseFloat(els.confThreshold.value);
+    const formData = new FormData();
+    formData.append('image', currentFile);
+    formData.append('confidence_threshold', threshold.toString());
+
+    try {
+        const res = await fetch('/api/detect', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        clearInterval(progressInterval);
+        clearInterval(msgInterval);
+
+        if (!data.success) {
+            if (data.model_loading) {
+                els.loadingText.textContent = '⏳ AI model still loading, please wait...';
+                els.loadingDot.className = 'ldot loading';
+                setTimeout(() => els.analyzeBtn.click(), 3000);
+                return;
+            }
+            showToast(data.error || 'Detection failed.');
+            els.analyzeBtn.classList.remove('loading');
+            els.analyzeBtn.disabled = false;
+            els.loadingBar.classList.remove('show');
+            return;
+        }
+
+        // Complete progress
+        els.loadingFill.style.width = '100%';
+        els.loadingFill.classList.add('done');
+        els.loadingDot.className = 'ldot done';
+        els.loadingText.textContent = '✅ Analysis complete!';
+        setTimeout(() => { els.loadingBar.classList.remove('show'); els.loadingFill.classList.remove('done'); }, 800);
+
+        displayResults(data);
+    } catch (err) {
+        clearInterval(progressInterval);
+        clearInterval(msgInterval);
+        showToast('Network error. Is the server running?');
+        els.analyzeBtn.classList.remove('loading');
+        els.analyzeBtn.disabled = false;
+        els.loadingBar.classList.remove('show');
+    }
+});
+
+// ─── Filter Count Helpers ───
+function resetFilterCount() {
+    els.filterCount.style.display = 'none';
+    els.shownCount.textContent = '0';
+    els.totalCount.textContent = '0';
+}
+
+function updateFilterCount(data) {
+    els.shownCount.textContent = data.detections.length;
+    els.totalCount.textContent = data.total_raw_detections || data.detections.length;
+    els.filterCount.style.display = 'block';
+}
+
+// ─── Confidence Slider ───
+els.confThreshold.addEventListener('input', () => {
+    const val = parseFloat(els.confThreshold.value);
+    els.confValue.textContent = val.toFixed(2);
+
+    // If results are visible, debounce and re-analyze
+    if (els.resultsSection.classList.contains('show') && currentFile) {
+        clearTimeout(confDebounceTimer);
+        confDebounceTimer = setTimeout(() => {
+            els.analyzeBtn.click();
+        }, 400);
+    }
+});
+
+// ─── Display Results ───
+function displayResults(data) {
+    const cls = data.classification;
+    const isGood = cls.status === 'GOOD';
+
+    // Step 3: Results
+    setStep(3);
+
+    // Meta
+    const time = data.processing_time_ms || 0;
+    const fname = currentFile ? currentFile.name : 'image';
+    els.resultMeta.innerHTML = `
+        <span>📄 ${fname}</span>
+        <span>⏱ ${time < 1000 ? time + 'ms' : (time / 1000).toFixed(1) + 's'}</span>
+        <span>📐 ${data.detections.length} detection${data.detections.length !== 1 ? 's' : ''}</span>
+    `;
+
+    // Banner
+    els.classificationBanner.className = 'classification-banner ' + (isGood ? 'good' : 'bad');
+    els.statusIcon.textContent = isGood ? '✅' : '❌';
+    els.statusTitle.textContent = cls.label;
+    els.statusDesc.textContent = cls.description;
+    els.severityTag.textContent = cls.severity.toUpperCase();
+    els.severityTag.className = 'stag ' + cls.severity;
+
+    // Annotated
+    currentAnnotatedB64 = data.annotated_image;
+    els.annotatedPreview.src = 'data:image/jpeg;base64,' + data.annotated_image;
+
+    // Stats
+    const numDefects = data.num_defects;
+    const avgConf = numDefects > 0
+        ? (data.detections.reduce((s, d) => s + d.confidence, 0) / numDefects * 100).toFixed(0) + '%'
+        : '—';
+    els.statsGrid.innerHTML = `
+        <div class="stat-card"><div class="sic">🔍</div><div class="sv" style="color:${cls.color}">${numDefects}</div><div class="sl">Defects Found</div></div>
+        <div class="stat-card"><div class="sic">📊</div><div class="sv" style="color:${isGood?'var(--accent-green)':'var(--accent-red)'}">${isGood?'PASS':'FAIL'}</div><div class="sl">Weld Status</div></div>
+        <div class="stat-card"><div class="sic">🎯</div><div class="sv">${avgConf}</div><div class="sl">Avg Confidence</div></div>
+        <div class="stat-card"><div class="sic">⏱</div><div class="sv">${time < 1000 ? time + 'ms' : (time/1000).toFixed(1)+'s'}</div><div class="sl">Processing Time</div></div>
+    `;
+
+    // Defects
+    if (numDefects > 0) {
+        els.defectDetails.style.display = 'block';
+        els.defectList.innerHTML = data.defect_details.map((d, i) => {
+            const pct = (d.confidence * 100).toFixed(1);
+            const c = d.confidence > 0.7 ? 'var(--accent-red)' : d.confidence > 0.4 ? 'var(--accent-amber)' : 'var(--accent-blue)';
+            const icon = d.class_name === 'crack' ? '💥' : d.class_name === 'porosity' ? '🕳️' : '🔻';
+            return `<div class="defect-item" style="animation:slideUp 0.3s ease ${i*0.08}s both;">
+                <div class="di ${d.class_name}">${icon}</div>
+                <div class="dinfo"><div class="dname">${d.class_name.charAt(0).toUpperCase()+d.class_name.slice(1)}</div><div class="ddesc">${d.description}</div></div>
+                <span class="dconf" style="color:${c}">${pct}%</span>
+            </div>`;
+        }).join('');
+    } else {
+        els.defectDetails.style.display = 'none';
+    }
+
+    // Recommendations
+    els.recContent.innerHTML = isGood
+        ? `<p>✅ This weld appears to be in good condition with no detectable defects. Continue with standard quality assurance procedures.</p>`
+        : `<ul>${data.defect_details.map(d => `<li><strong>${d.class_name.charAt(0).toUpperCase()+d.class_name.slice(1)}:</strong> ${d.description}</li>`).join('')}<li>Review weld parameters (current, voltage, travel speed) to prevent recurrence.</li><li>Consider NDT methods for further verification.</li></ul>`;
+
+    // Show results — disable upload zone clicking
+    els.resultsSection.classList.add('show');
+    els.analyzeBtn.classList.remove('show');
+    els.analyzeBtn.classList.remove('loading');
+    els.analyzeBtn.disabled = false;
+    resultsActive = true;
+
+    // Update filter count
+    updateFilterCount(data);
+
+    // Scroll to results
+    setTimeout(() => els.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+
+    // Add to history
+    addToHistory(data, fname);
+
+    // Confetti
+    if (isGood) spawnConfetti();
+}
+
+// ─── History ───
+function addToHistory(data, fname) {
+    const entry = {
+        id: Date.now(),
+        filename: fname,
+        status: data.classification.status,
+        label: data.classification.label,
+        defects: data.num_defects,
+        time: data.processing_time_ms,
+        data: data,
+    };
+    analysisHistory.unshift(entry);
+    if (analysisHistory.length > 10) analysisHistory.pop();
+    renderHistory();
+}
+
+function renderHistory() {
+    if (analysisHistory.length === 0) return;
+    els.historySection.style.display = 'block';
+    els.historyList.innerHTML = analysisHistory.map(h => `
+        <div class="history-item" onclick="restoreAnalysis(${h.id})">
+            <span class="h-status ${h.status === 'GOOD' ? 'good' : 'bad'}">${h.status === 'GOOD' ? '✅' : '❌'}</span>
+            <span>${h.label}</span>
+            <span class="h-time">${h.time < 1000 ? h.time+'ms' : (h.time/1000).toFixed(1)+'s'}</span>
+        </div>
+    `).join('');
+}
+
+function restoreAnalysis(id) {
+    const entry = analysisHistory.find(h => h.id === id);
+    if (!entry) return;
+    displayResults(entry.data);
+}
+
+// ─── New Analysis ───
+els.newAnalysisBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    currentFile = null;
+    currentAnnotatedB64 = null;
+    currentRawData = null;
+    resultsActive = false;
+    els.uploadZone.classList.remove('has-image');
+    els.fileName.textContent = '';
+    els.fileInput.value = '';
+    els.originalPreview.src = '';
+    els.annotatedPreview.src = '';
+    els.resultsSection.classList.remove('show');
+    els.analyzeBtn.classList.remove('show');
+    els.confidenceSlider.classList.remove('show');
+    resetFilterCount();
+    setStep(1);
+    els.uploadZone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// ─── Confetti ───
+function spawnConfetti() {
+    const container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+    const colors = ['#22c55e','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+    for (let i = 0; i < 50; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-piece';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.width = (Math.random() * 6 + 3) + 'px';
+        p.style.height = (Math.random() * 6 + 3) + 'px';
+        p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        p.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        p.style.animationDelay = (Math.random() * 1.5) + 's';
+        container.appendChild(p);
+    }
+    setTimeout(() => container.remove(), 4000);
+}
+
+// ─── Toast ───
+let toastTimeout;
+function showToast(msg) {
+    els.toastMsg.textContent = msg;
+    els.toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => els.toast.classList.remove('show'), 4000);
+}
+
+// ─── Keyboard shortcut ───
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !els.analyzeBtn.disabled && els.analyzeBtn.classList.contains('show')) {
+        els.analyzeBtn.click();
+    }
+});
+</script>
+</body>
+</html>

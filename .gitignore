@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+runs/detect/*/
+!runs/detect/welding_defect_model6/weights/best.pt
+*.pt
+!yolov8n.pt
+
+# Datasets
+dataset/
+
+# Logs
+*.log
+/tmp/
