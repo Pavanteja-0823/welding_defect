@@ -660,6 +660,8 @@ let modelReady = false;
 let currentRawData = null;
 let confDebounceTimer = null;
 let resultsActive = false;
+let retryCount = 0;
+const MAX_RETRIES = 10;
 
 // ════════════════════════════════════════════════════════════════
 // Backend URL Management
@@ -800,6 +802,7 @@ els.analyzeBtn.addEventListener('click', async (e) => {
 
     // Simulate progress
     let progress = 0;
+    retryCount = 0;
     const progressInterval = setInterval(() => {
         progress = Math.min(progress + 5, 85);
         els.loadingFill.style.width = progress + '%';
@@ -835,8 +838,20 @@ els.analyzeBtn.addEventListener('click', async (e) => {
 
         if (!data.success) {
             if (data.model_loading) {
+                retryCount++;
+                if (retryCount >= MAX_RETRIES) {
+                    showToast('AI model failed to load after multiple attempts. Please restart the server.');
+                    els.analyzeBtn.classList.remove('loading');
+                    els.analyzeBtn.disabled = false;
+                    els.loadingBar.classList.remove('show');
+                    retryCount = 0;
+                    return;
+                }
                 els.loadingText.textContent = '⏳ AI model still loading, please wait...';
                 els.loadingDot.className = 'ldot loading';
+                // Remove loading class so the retry click actually runs
+                els.analyzeBtn.classList.remove('loading');
+                els.analyzeBtn.disabled = false;
                 setTimeout(() => els.analyzeBtn.click(), 3000);
                 return;
             }
@@ -1010,6 +1025,7 @@ function restoreAnalysis(id) {
 // New Analysis
 els.newAnalysisBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    retryCount = 0;
     currentFile = null;
     currentAnnotatedB64 = null;
     currentRawData = null;
@@ -1020,7 +1036,10 @@ els.newAnalysisBtn.addEventListener('click', (e) => {
     els.originalPreview.src = '';
     els.annotatedPreview.src = '';
     els.resultsSection.classList.remove('show');
+    els.loadingBar.classList.remove('show');
     els.analyzeBtn.classList.remove('show');
+    els.analyzeBtn.classList.remove('loading');
+    els.analyzeBtn.disabled = false;
     els.confidenceSlider.classList.remove('show');
     resetFilterCount();
     setStep(1);

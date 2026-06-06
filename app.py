@@ -29,14 +29,16 @@ _model_error = None
 
 def _load_model():
     """Internal: actually load the model."""
-    global _model, _model_ready, _model_error
+    global _model, _model_ready, _model_error, _model_loading
     try:
         print(f"  [Background] Loading model from {MODEL_PATH}...")
         _model = YOLO(str(MODEL_PATH))
         _model_ready = True
+        _model_loading = False
         print(f"  [Background] Model loaded successfully!")
     except Exception as e:
         _model_error = str(e)
+        _model_loading = False
         print(f"  [Background] Model loading FAILED: {e}")
 
 
