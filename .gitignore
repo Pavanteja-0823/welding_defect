@@ -19,9 +19,7 @@ env/
 .DS_Store
 Thumbs.db
 
-# Project specific
-runs/detect/*/
-!runs/detect/welding_defect_model6/weights/best.pt
+# Project specific — only track the trained model weights
 *.pt
 !yolov8n.pt
 !runs/detect/welding_defect_model6/weights/best.pt
