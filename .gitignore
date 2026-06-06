@@ -24,6 +24,7 @@ runs/detect/*/
 !runs/detect/welding_defect_model6/weights/best.pt
 *.pt
 !yolov8n.pt
+!runs/detect/welding_defect_model6/weights/best.pt
 
 # Datasets
 dataset/

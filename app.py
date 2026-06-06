@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 import time
 import argparse
 import threading
@@ -231,17 +232,21 @@ def detect():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5000, help="Port")
+    parser.add_argument("--port", type=int, default=None, help="Port (default: PORT env or 5000)")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host")
+    parser.add_argument("--debug", action="store_true", default=False, help="Debug mode")
     args = parser.parse_args()
+
+    port = args.port or int(os.environ.get("PORT", 5000))
+    debug = args.debug or os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true")
 
     print(f"\n{'='*60}")
     print(f"  🔬 Welding Defect Detection UI")
-    print(f"  🌐 http://{args.host}:{args.port}")
+    print(f"  🌐 http://{args.host}:{port}")
     print(f"  ⏳ Model loading in background... page loads instantly!")
     print(f"{'='*60}\n")
 
     # Start model loading immediately
     get_model()
 
-    app.run(host=args.host, port=args.port, debug=True)
+    app.run(host=args.host, port=port, debug=debug)
