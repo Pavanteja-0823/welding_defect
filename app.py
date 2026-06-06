@@ -248,7 +248,8 @@ if __name__ == "__main__":
     print(f"  ⏳ Model loading in background... page loads instantly!")
     print(f"{'='*60}\n")
 
-    # Start model loading immediately
-    get_model()
-
     app.run(host=args.host, port=port, debug=debug)
+
+
+# Start model loading in background when module is imported (for gunicorn/production)
+get_model()
