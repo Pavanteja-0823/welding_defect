@@ -1,4 +1,4 @@
-path: C:/Users/Admin/OneDrive/Desktop/welding_defect/dataset
+path: ./dataset
 
 train: train/images
 val: valid/images

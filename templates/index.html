@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><text y=%2228%22 font-size=%2228%22>🔬</text></svg>" />
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -47,7 +48,7 @@
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 
-        /* ── Header ── */
+        /* —— Header —— */
         header {
             background: rgba(17,24,39,0.92);
             backdrop-filter: blur(12px);
@@ -74,10 +75,10 @@
         @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
         .header-badge .dot.pulse { animation: pulse-dot 1.5s infinite; }
 
-        /* ── Main ── */
+        /* —— Main —— */
         main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 
-        /* ── Steps Indicator ── */
+        /* —— Steps Indicator —— */
         .steps {
             display: flex; align-items: center; justify-content: center;
             gap: 0; margin-bottom: 2rem;
@@ -104,7 +105,7 @@
         }
         .step-connector.done { background: var(--accent-green); }
 
-        /* ── Upload Zone ── */
+        /* —— Upload Zone —— */
         .upload-zone {
             background: var(--bg-card);
             border: 2px dashed var(--border-color);
@@ -146,7 +147,7 @@
             font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.5rem;
         }
 
-        /* ── Preview Row ── */
+        /* —— Preview Row —— */
         .preview-row { display: none; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1rem; }
         .upload-zone.has-image .preview-row { display: grid; }
         .upload-zone.has-image .upload-placeholder { display: none; }
@@ -177,7 +178,7 @@
         .compare-toggle button.active { background: var(--accent-blue); color: #fff; }
         .compare-toggle button:hover:not(.active) { color: var(--text-secondary); }
 
-        /* ── Analyze Button ── */
+        /* —— Analyze Button —— */
         .analyze-btn {
             display: none; margin: 1.25rem auto 0; padding: 0.75rem 2.5rem;
             border: none; border-radius: var(--radius-md);
@@ -203,7 +204,7 @@
         .analyze-btn.loading .loading-text { display: inline; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Loading Bar ── */
+        /* —— Loading Bar —— */
         .loading-bar-container {
             display: none; margin-top: 1.5rem;
         }
@@ -228,7 +229,7 @@
         .loading-status .ldot.done { background: var(--accent-green); }
         .loading-status .ldot.error { background: var(--accent-red); }
 
-        /* ── Results ── */
+        /* —— Results —— */
         .results-section {
             display: none; margin-top: 1.5rem; animation: slideUp 0.5s ease;
         }
@@ -306,7 +307,7 @@
             border: 1px solid var(--border-color); flex-shrink: 0;
         }
 
-        /* ── Confidence Slider ── */
+        /* —— Confidence Slider —— */
         .confidence-slider {
             display: none; margin: 1.25rem auto 0; max-width: 420px;
             background: var(--bg-card); border: 1px solid var(--border-color);
@@ -371,7 +372,7 @@
         .recommendations ul li { padding-left: 1.25rem; position: relative; font-size: 0.82rem; color: var(--text-secondary); }
         .recommendations ul li::before { content: '→'; position: absolute; left: 0; color: var(--accent-blue); }
 
-        /* ── Action Buttons ── */
+        /* —— Action Buttons —— */
         .action-row {
             display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;
         }
@@ -386,7 +387,7 @@
         .action-row button.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-blue-glow); }
         .action-row button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        /* ── History ── */
+        /* —— History —— */
         .history-section {
             margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;
         }
@@ -410,10 +411,10 @@
             text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 1rem;
         }
 
-        /* ── Footer ── */
+        /* —— Footer —— */
         footer { text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.72rem; border-top: 1px solid var(--border-color); }
 
-        /* ── Confetti ── */
+        /* —— Confetti —— */
         .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; overflow: hidden; }
         .confetti-piece { position: absolute; width: 8px; height: 8px; top: -10px; animation: confetti-fall linear forwards; }
         @keyframes confetti-fall {
@@ -421,7 +422,7 @@
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
 
-        /* ── Toast ── */
+        /* —— Toast —— */
         .toast {
             position: fixed; bottom: 2rem; right: 2rem;
             background: #1a1f2e; border: 1px solid rgba(239,68,68,0.3);
@@ -567,7 +568,7 @@
 <div class="toast" id="toast"><div class="toast-title">⚠️ Error</div><div class="toast-msg" id="toastMsg">Something went wrong.</div></div>
 
 <script>
-// ─── Elements ───
+// ——— Elements ———
 const els = {
     modelDot: document.getElementById('modelDot'),
     modelStatusText: document.getElementById('modelStatusText'),
@@ -620,7 +621,14 @@ let resultsActive = false;
 let retryCount = 0;
 const MAX_RETRIES = 10;
 
-// ─── Poll Model Status ───
+// ——— Toast ———
+function showToast(msg) {
+    els.toastMsg.textContent = msg;
+    els.toast.classList.add('show');
+    setTimeout(() => els.toast.classList.remove('show'), 4000);
+}
+
+// ——— Poll Model Status ———
 async function pollModelStatus() {
     try {
         const res = await fetch('/api/status');
@@ -643,7 +651,7 @@ async function pollModelStatus() {
 }
 pollModelStatus();
 
-// ─── Steps helper ───
+// ——— Steps helper ———
 function setStep(step) {
     [els.step1, els.step2, els.step3].forEach((s, i) => {
         s.classList.toggle('active', i + 1 === step);
@@ -654,7 +662,7 @@ function setStep(step) {
     });
 }
 
-// ─── File Handling ───
+// ——— File Handling ———
 function handleFile(file) {
     if (!file) return;
     if (!file.type.startsWith('image/')) { showToast('Please select an image file.'); return; }
@@ -678,7 +686,6 @@ function handleFile(file) {
 }
 
 els.uploadZone.addEventListener('click', () => {
-    // Don't open file picker when results are being shown
     if (resultsActive) return;
     els.fileInput.click();
 });
@@ -705,7 +712,7 @@ els.uploadZone.addEventListener('mousemove', (e) => {
     els.uploadZone.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
 });
 
-// ─── Compare Toggle ───
+// ——— Compare Toggle ———
 document.querySelectorAll('.compare-toggle button').forEach(btn => {
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -717,7 +724,7 @@ document.querySelectorAll('.compare-toggle button').forEach(btn => {
     });
 });
 
-// ─── Analyze ───
+// ——— Analyze ———
 els.analyzeBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     if (!currentFile || els.analyzeBtn.classList.contains('loading')) return;
@@ -778,7 +785,6 @@ els.analyzeBtn.addEventListener('click', async (e) => {
                 }
                 els.loadingText.textContent = '⏳ AI model still loading, please wait...';
                 els.loadingDot.className = 'ldot loading';
-                // Remove loading class so the retry click actually runs
                 els.analyzeBtn.classList.remove('loading');
                 els.analyzeBtn.disabled = false;
                 setTimeout(() => els.analyzeBtn.click(), 3000);
@@ -809,7 +815,7 @@ els.analyzeBtn.addEventListener('click', async (e) => {
     }
 });
 
-// ─── Filter Count Helpers ───
+// ——— Filter Count Helpers ———
 function resetFilterCount() {
     els.filterCount.style.display = 'none';
     els.shownCount.textContent = '0';
@@ -822,7 +828,7 @@ function updateFilterCount(data) {
     els.filterCount.style.display = 'block';
 }
 
-// ─── Confidence Slider ───
+// ——— Confidence Slider ———
 els.confThreshold.addEventListener('input', () => {
     const val = parseFloat(els.confThreshold.value);
     els.confValue.textContent = val.toFixed(2);
@@ -836,7 +842,7 @@ els.confThreshold.addEventListener('input', () => {
     }
 });
 
-// ─── Display Results ───
+// ——— Display Results ———
 function displayResults(data) {
     const cls = data.classification;
     const isGood = cls.status === 'GOOD';
@@ -919,7 +925,32 @@ function displayResults(data) {
     if (isGood) spawnConfetti();
 }
 
-// ─── History ───
+// ——— History (persisted via localStorage) ———
+function loadHistory() {
+    try {
+        const saved = localStorage.getItem('weld_inspector_history');
+        if (saved) {
+            analysisHistory = JSON.parse(saved);
+            renderHistory();
+        }
+    } catch (e) { console.warn('Failed to load history:', e); }
+}
+
+function saveHistory() {
+    try {
+        // Store without base64 images to save localStorage space
+        const lightweight = analysisHistory.map(h => ({
+            ...h,
+            data: {
+                ...h.data,
+                original_image: undefined,
+                annotated_image: undefined,
+            }
+        }));
+        localStorage.setItem('weld_inspector_history', JSON.stringify(lightweight));
+    } catch (e) { console.warn('Failed to save history:', e); }
+}
+
 function addToHistory(data, fname) {
     const entry = {
         id: Date.now(),
@@ -928,11 +959,13 @@ function addToHistory(data, fname) {
         label: data.classification.label,
         defects: data.num_defects,
         time: data.processing_time_ms,
+        date: new Date().toLocaleString(),
         data: data,
     };
     analysisHistory.unshift(entry);
-    if (analysisHistory.length > 10) analysisHistory.pop();
+    if (analysisHistory.length > 20) analysisHistory.pop();
     renderHistory();
+    saveHistory();
 }
 
 function renderHistory() {
@@ -942,18 +975,36 @@ function renderHistory() {
         <div class="history-item" onclick="restoreAnalysis(${h.id})">
             <span class="h-status ${h.status === 'GOOD' ? 'good' : 'bad'}">${h.status === 'GOOD' ? '✅' : '❌'}</span>
             <span>${h.label}</span>
-            <span class="h-time">${h.time < 1000 ? h.time+'ms' : (h.time/1000).toFixed(1)+'s'}</span>
+            <span class="h-time" title="${h.date || ''}">${h.time < 1000 ? h.time+'ms' : (h.time/1000).toFixed(1)+'s'}</span>
         </div>
-    `).join('');
+    `).join('') + `
+        <div style="text-align:center; margin-top:0.5rem;">
+            <button onclick="clearHistory(event)" style="background:none;border:1px solid var(--border-color);color:var(--text-muted);padding:0.3rem 0.8rem;border-radius:6px;font-size:0.7rem;cursor:pointer;font-family:inherit;">Clear History</button>
+        </div>
+    `;
 }
 
 function restoreAnalysis(id) {
     const entry = analysisHistory.find(h => h.id === id);
     if (!entry) return;
-    displayResults(entry.data);
+    if (entry.data.annotated_image) {
+        displayResults(entry.data);
+    } else {
+        showToast('Image data not available for older entries. Run a new analysis.');
+    }
 }
 
-// ─── New Analysis ───
+function clearHistory(e) {
+    e.stopPropagation();
+    analysisHistory = [];
+    localStorage.removeItem('weld_inspector_history');
+    els.historySection.style.display = 'none';
+}
+
+// Load history on page start
+loadHistory();
+
+// ——— New Analysis ———
 els.newAnalysisBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     retryCount = 0;
@@ -977,7 +1028,7 @@ els.newAnalysisBtn.addEventListener('click', (e) => {
     els.uploadZone.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
-// ─── Confetti ───
+// ——— Confetti ———
 function spawnConfetti() {
     const container = document.createElement('div');
     container.className = 'confetti-container';
@@ -997,22 +1048,6 @@ function spawnConfetti() {
     }
     setTimeout(() => container.remove(), 4000);
 }
-
-// ─── Toast ───
-let toastTimeout;
-function showToast(msg) {
-    els.toastMsg.textContent = msg;
-    els.toast.classList.add('show');
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => els.toast.classList.remove('show'), 4000);
-}
-
-// ─── Keyboard shortcut ───
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !els.analyzeBtn.disabled && els.analyzeBtn.classList.contains('show')) {
-        els.analyzeBtn.click();
-    }
-});
 </script>
 </body>
 </html>
